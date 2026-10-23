@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tissue Image Reading R06</title>
+<style>
+:root{--bg:#f4f4f6;--fg:#1d1d1f;--mute:#5f6368;--line:#d0d0d6;--acc:#2a4d9b;--card:#fff;--warn:#8a4b00;--warnbg:#fff4e0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#161618;--fg:#ececec;--mute:#a8a8b0;--line:#3d3d44;--acc:#8fb0ff;--card:#222226;--warn:#ffcf8a;--warnbg:#3a2a10}}
+:root[data-theme="dark"]{--bg:#161618;--fg:#ececec;--mute:#a8a8b0;--line:#3d3d44;--acc:#8fb0ff;--card:#222226;--warn:#ffcf8a;--warnbg:#3a2a10}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 16px}
+header .row{max-width:1000px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header .t{font-weight:600;flex:1 1 auto}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;max-width:1000px;margin:6px auto 0}.bar>div{height:100%;background:var(--acc);transition:width .2s}
+.ptxt{font-size:13px;color:var(--mute)}
+main{max-width:1000px;margin:0 auto;padding:12px 16px 40px}
+h1{font-size:21px;margin:10px 0}h2{font-size:17px;margin:4px 0 8px}
+.mute{color:var(--mute)}.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.banner{background:var(--warnbg);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;margin:10px 0;font-size:14px}
+.imgs{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;margin:8px 0 4px}
+.imgs figure{margin:0;text-align:center;width:384px;max-width:100%}
+.imgs img{width:384px;height:auto;aspect-ratio:1/1;max-width:100%;image-rendering:auto;border:1px solid var(--line);display:block;background:#000;visibility:hidden}
+.imgs.ready img{visibility:visible}
+.lab{font-weight:700;font-size:18px;margin-bottom:4px;letter-spacing:.04em}
+.q{margin:14px 0}.q>b{display:block;margin-bottom:4px}
+.opts{display:flex;flex-wrap:wrap;gap:4px 8px}
+.opts label{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;cursor:pointer;min-height:36px}
+.opts label:has(input:checked){border-color:var(--acc);outline:1px solid var(--acc)}
+button{font:inherit;padding:9px 20px;border-radius:6px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer;min-height:40px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) button{color:#111}}
+button:disabled{opacity:.4;cursor:default}button.sec{background:transparent;color:var(--acc)}
+input[type=text],input[type=number],textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg);max-width:100%}
+textarea{width:100%;min-height:70px}
+footer{max-width:1000px;margin:0 auto;padding:0 16px 30px;font-size:13px;color:var(--mute)}
+footer button{padding:4px 10px;min-height:0;font-size:13px}
+#dump{width:100%;min-height:160px;font:12px ui-monospace,monospace;display:none;margin-top:8px}
+
+.shortcut-key{display:none}.shortcuts-enabled .shortcut-key{display:inline-block;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:5px;font:12px monospace}.shortcuts-enabled .hot-active{outline:2px solid var(--acc);outline-offset:4px;border-radius:3px}
+</style></head><body>
+<header><div class="row"><span class="t">Tissue image reading study <span class="mute">· reader R06</span></span><span class="ptxt" id="ptxt"></span></div>
+<div class="bar"><div id="pbar" style="width:0%"></div></div></header>
+<main><div id="mode"></div><div id="app"></div></main>
+<footer><span>Your answers are saved in this browser after every page. Backup copy of your answers:</span>
+<button class="sec" id="pause">Save progress and pause</button> <label>Resume from JSON <input type="file" id="restore" accept=".json,application/json"></label> <span id="restoremsg" role="status"></span> <button class="sec" id="fjson">Download JSON</button> <button class="sec" id="fshow">Show as text</button>
+<textarea id="dump" readonly></textarea><div class="small" id="build"></div></footer>
+<script>
+"use strict";
+const READER="R06", MODE="main", BUILD="v3-20261019-102a71", IMG0="images/", IMG=IMG0.startsWith("__")?"images/":IMG0, B2=[{"t":"R06-S001","i":"xxatuu6j"},{"t":"R06-S002","i":"ruvsgxwy"},{"t":"R06-S003","i":"2mm4kpjn"},{"t":"R06-S004","i":"x8sburcg"},{"t":"R06-S005","i":"qa4zv9pk"},{"t":"R06-S006","i":"zsu6kyxp"},{"t":"R06-S007","i":"jv8gnsy4"},{"t":"R06-S008","i":"hev325ju"},{"t":"R06-S009","i":"vryyy9rb"},{"t":"R06-S010","i":"9sd36kdv"},{"t":"R06-S011","i":"zwnee3b8"},{"t":"R06-S012","i":"bbdmpesa"},{"t":"R06-S013","i":"6g36n7b6"},{"t":"R06-S014","i":"ntxsyztt"},{"t":"R06-S015","i":"cfzt52dx"},{"t":"R06-S016","i":"qus6gma6"},{"t":"R06-S017","i":"s22hjygj"},{"t":"R06-S018","i":"ryypt2wm"},{"t":"R06-S019","i":"btfb4kqu"},{"t":"R06-S020","i":"4kwzqwvd"},{"t":"R06-S021","i":"3x37czph"},{"t":"R06-S022","i":"rv6f4ktc"},{"t":"R06-S023","i":"crprnfp3"},{"t":"R06-S024","i":"tdqsnc2f"},{"t":"R06-S025","i":"u4fgb24n"},{"t":"R06-S026","i":"wxrw7tc6"},{"t":"R06-S027","i":"bujg3xvp"},{"t":"R06-S028","i":"bt57khja"},{"t":"R06-S029","i":"6upampy4"},{"t":"R06-S030","i":"kf8h8ac5"},{"t":"R06-S031","i":"fjjm729c"},{"t":"R06-S032","i":"4vr924ur"},{"t":"R06-S033","i":"66btwn7b"},{"t":"R06-S034","i":"fp83mhyb"},{"t":"R06-S035","i":"ds3waerh"},{"t":"R06-S036","i":"r5qgp79y"},{"t":"R06-S037","i":"2v8qs8xn"},{"t":"R06-S038","i":"sjqe6xat"},{"t":"R06-S039","i":"ae96eq5y"},{"t":"R06-S040","i":"dhzdva4x"},{"t":"R06-S041","i":"vvk6gf35"},{"t":"R06-S042","i":"rejyu7j4"},{"t":"R06-S043","i":"tpvunkaa"},{"t":"R06-S044","i":"3gcdtgb5"},{"t":"R06-S045","i":"z8jz9hbp"},{"t":"R06-S046","i":"pusnd96h"},{"t":"R06-S047","i":"nkruzfmu"},{"t":"R06-S048","i":"ksnzwz43"},{"t":"R06-S049","i":"ha2smbxx"},{"t":"R06-S050","i":"utj3ymbt"},{"t":"R06-S051","i":"abhexty3"},{"t":"R06-S052","i":"7u3gmc5p"},{"t":"R06-S053","i":"2bzt49b8"},{"t":"R06-S054","i":"mrj3rdrz"},{"t":"R06-S055","i":"sac3rwu6"},{"t":"R06-S056","i":"kb4kpm3d"},{"t":"R06-S057","i":"bu3sscuc"},{"t":"R06-S058","i":"m88y8ysm"},{"t":"R06-S059","i":"d4e6hguf"},{"t":"R06-S060","i":"hn9cu3h3"},{"t":"R06-S061","i":"vhrumnc4"},{"t":"R06-S062","i":"fqt6yzsq"}], B1=[{"t":"R06-P001","a":"ws8qzgag","b":"w2gtrvuq"},{"t":"R06-P002","a":"xryex8ft","b":"e3v3yepf"},{"t":"R06-P003","a":"gq32dckp","b":"9nbjxuek"},{"t":"R06-P004","a":"z8r2skzn","b":"j6ysmd9u"},{"t":"R06-P005","a":"ef9j5khj","b":"rastserj"},{"t":"R06-P006","a":"s7ghfkcz","b":"uw38sqab"},{"t":"R06-P007","a":"z8sqmfyg","b":"kh2hkuee"},{"t":"R06-P008","a":"q7x5dhkg","b":"t9ktrmc4"},{"t":"R06-P009","a":"ej526jxg","b":"6fnmpbck"},{"t":"R06-P010","a":"9597uj2z","b":"7dgk96he"},{"t":"R06-P011","a":"t3etv2nf","b":"2wvdcrex"},{"t":"R06-P012","a":"2sge5uq3","b":"kzckpn4b"},{"t":"R06-P013","a":"fpj9qxde","b":"a6n76u8h"},{"t":"R06-P014","a":"pe56ra2n","b":"ut2utczw"},{"t":"R06-P015","a":"3vkja82d","b":"3sq9u8bc"},{"t":"R06-P016","a":"nw7zea3q","b":"26t36wsx"},{"t":"R06-P017","a":"kc9gyr9w","b":"rmuzthch"},{"t":"R06-P018","a":"wmvm2fpc","b":"qjxyt6jx"},{"t":"R06-P019","a":"e8du856j","b":"rjm899vt"},{"t":"R06-P020","a":"zpef5fzc","b":"emwnhut8"},{"t":"R06-P021","a":"jwtfx999","b":"yv2m73ng"},{"t":"R06-P022","a":"pu2qrqrg","b":"kqus3799"},{"t":"R06-P023","a":"fjmunnqv","b":"5zr78xsw"},{"t":"R06-P024","a":"f2xxe8yr","b":"ggtuc4vm"},{"t":"R06-P025","a":"qumktrr4","b":"58tmy8zh"},{"t":"R06-P026","a":"r7fcrbw8","b":"wmbqqafk"},{"t":"R06-P027","a":"6scdwjc2","b":"ek67zhhu"},{"t":"R06-P028","a":"bnc5kjep","b":"7gsxbctg"},{"t":"R06-P029","a":"zrsyghkf","b":"d7myfpzq"},{"t":"R06-P030","a":"pkwpczdm","b":"7nz93gpx"},{"t":"R06-P031","a":"mkpcqrzu","b":"d372sfk4"},{"t":"R06-P032","a":"a7qcxr7j","b":"uv5pjqk7"},{"t":"R06-P033","a":"v2cagz9a","b":"hjzbya57"},{"t":"R06-P034","a":"56ssx8nd","b":"4thwbrbb"},{"t":"R06-P035","a":"jbyath8b","b":"dwsrt2xm"},{"t":"R06-P036","a":"vew9pfvu","b":"yep4yrq5"},{"t":"R06-P037","a":"4kytrnsf","b":"4t9j8555"},{"t":"R06-P038","a":"uh4w2q95","b":"ajpq9f4n"},{"t":"R06-P039","a":"ad6ez655","b":"qssmbcbq"},{"t":"R06-P040","a":"422k5n34","b":"9qu6aku9"},{"t":"R06-P041","a":"gdxzkg4x","b":"wnstrqpd"},{"t":"R06-P042","a":"pm83g2eg","b":"r48xafag"},{"t":"R06-P043","a":"wwhe8zkc","b":"j7jvajdn"},{"t":"R06-P044","a":"qr9y4q9v","b":"27xzeea3"},{"t":"R06-P045","a":"3jrarede","b":"758zjnk2"},{"t":"R06-P046","a":"7mkycddu","b":"7f63yb2a"},{"t":"R06-P047","a":"h8aenpbw","b":"48nqbywb"},{"t":"R06-P048","a":"8ekyq6mn","b":"awdz6f46"},{"t":"R06-P049","a":"cszk3mxu","b":"8kaz7es5"},{"t":"R06-P050","a":"csct6h3d","b":"wnvvqvfw"},{"t":"R06-P051","a":"gfrwuxny","b":"y22ycjxt"},{"t":"R06-P052","a":"t4uay7eu","b":"yup5b4yy"},{"t":"R06-P053","a":"ad5d6uhy","b":"pzkzd2qb"},{"t":"R06-P054","a":"eq7zehdh","b":"wx8tmtsp"},{"t":"R06-P055","a":"jnjbffen","b":"vmfdv9tm"},{"t":"R06-P056","a":"c63m6pv8","b":"3bsddagy"},{"t":"R06-P057","a":"fgvpvv6u","b":"yhmjd37u"},{"t":"R06-P058","a":"jfatetv9","b":"z9x2f47n"},{"t":"R06-P059","a":"u8kamvc3","b":"5ajs6yge"},{"t":"R06-P060","a":"sxey7ju2","b":"phvfcj29"},{"t":"R06-P061","a":"bgutedmq","b":"jsyx8xz8"},{"t":"R06-P062","a":"tqnm6ebb","b":"z9rkrmrj"},{"t":"R06-P063","a":"s9vmecg9","b":"p4afjujz"},{"t":"R06-P064","a":"ubzfhy3m","b":"eraa693n"},{"t":"R06-P065","a":"tmewth8q","b":"cy6eb2sv"},{"t":"R06-P066","a":"6u2atgj4","b":"z22vxffd"},{"t":"R06-P067","a":"6vsxfcwe","b":"tu53sn65"},{"t":"R06-P068","a":"d6hk2uvc","b":"6vkyfpsu"},{"t":"R06-P069","a":"b2tkt2ja","b":"7xaa8jac"},{"t":"R06-P070","a":"vbsb5kx5","b":"9ue82q65"},{"t":"R06-P071","a":"wnfxprxm","b":"8jm7b2h7"},{"t":"R06-P072","a":"kdpmgrgn","b":"m8mq8d24"},{"t":"R06-P073","a":"y3yg65ve","b":"qqvqqcna"},{"t":"R06-P074","a":"fjdd9c48","b":"s83uuxbu"},{"t":"R06-P075","a":"cna7jbw9","b":"tna4bs8a"},{"t":"R06-P076","a":"ze98rk2y","b":"gf3dqcx2"},{"t":"R06-P077","a":"ta937rnu","b":"pfr2uyna"},{"t":"R06-P078","a":"wz89364t","b":"3wpjq94v"},{"t":"R06-P079","a":"nsff28tk","b":"45nqvh2k"},{"t":"R06-P080","a":"f8r47tuz","b":"faegzpm5"},{"t":"R06-P081","a":"7rv67mf5","b":"jb2n7jss"},{"t":"R06-P082","a":"q652yrtm","b":"ufvdc2wj"},{"t":"R06-P083","a":"pp73v9qa","b":"sv9xdx9e"},{"t":"R06-P084","a":"kjwyayyq","b":"evtfaaxj"},{"t":"R06-P085","a":"2nfkzkcs","b":"f9xmuaue"},{"t":"R06-P086","a":"cfwre7an","b":"pj6753dq"},{"t":"R06-P087","a":"vqdhh2wu","b":"r4eb8smj"},{"t":"R06-P088","a":"r8nd3fth","b":"cz8eengv"},{"t":"R06-P089","a":"rc5hwhz9","b":"bv9gqk8f"},{"t":"R06-P090","a":"d48hdubk","b":"ae3j3wd4"},{"t":"R06-P091","a":"y495kbv6","b":"y4rbwe9c"},{"t":"R06-P092","a":"mk3tckxu","b":"rn7enj5k"},{"t":"R06-P093","a":"3nacej26","b":"7stj8ccx"},{"t":"R06-P094","a":"99usynv8","b":"3gj2ymuf"},{"t":"R06-P095","a":"4afqyzqn","b":"vm8umg2v"},{"t":"R06-P096","a":"hy37kjkp","b":"g23uqexn"},{"t":"R06-P097","a":"vfsj3cg2","b":"henueunw"},{"t":"R06-P098","a":"us776qea","b":"4bkf3xyr"},{"t":"R06-P099","a":"dkr4tb5g","b":"baynq5rd"},{"t":"R06-P100","a":"49wm98tt","b":"kwm9jr43"},{"t":"R06-P101","a":"p3ytyz93","b":"z7ej5q8h"},{"t":"R06-P102","a":"jmu563t5","b":"rxwg4pjr"},{"t":"R06-P103","a":"g9rxn7s9","b":"xgjmtha6"},{"t":"R06-P104","a":"9pam7xap","b":"8z5qyxfz"},{"t":"R06-P105","a":"ud877py9","b":"bzdg28ct"},{"t":"R06-P106","a":"fm2k9455","b":"8myvttzs"},{"t":"R06-P107","a":"wqkmggbe","b":"ahs83vw6"},{"t":"R06-P108","a":"zt9b52pa","b":"w4bngfqv"},{"t":"R06-P109","a":"bh35kryr","b":"dg6wgb7t"},{"t":"R06-P110","a":"tqnxgfdk","b":"fjdvquph"},{"t":"R06-P111","a":"va7quetc","b":"6j3w4pah"},{"t":"R06-P112","a":"vvwef67x","b":"gg76435j"},{"t":"R06-P113","a":"z7j8br8n","b":"mnankf3n"},{"t":"R06-P114","a":"whaxywaj","b":"ay3u6tvv"},{"t":"R06-P115","a":"a32srma7","b":"tw392nuf"},{"t":"R06-P116","a":"t34b2f7b","b":"7m7jnzr5"},{"t":"R06-P117","a":"quwvud2r","b":"99sz8t96"},{"t":"R06-P118","a":"2ew6t67t","b":"66ekdzce"},{"t":"R06-P119","a":"xtgc7raf","b":"7vbpxqnz"},{"t":"R06-P120","a":"quxyju4g","b":"aatbdq4w"},{"t":"R06-P121","a":"szjzygzn","b":"ff6gz8y9"},{"t":"R06-P122","a":"fva42ef9","b":"mxsvra3n"},{"t":"R06-P123","a":"rb4e6dj5","b":"w5jcamw2"},{"t":"R06-P124","a":"8aawtate","b":"mk6hbhuw"},{"t":"R06-P125","a":"mf6y5g3f","b":"k2uzqv76"},{"t":"R06-P126","a":"58yg2wed","b":"5t8tqxtm"}];
+const KEY="claridi_reader_study_"+BUILD+"_"+READER, NTOT=B2.length+B1.length;
+const FORM_VERSION="resume-2";
+let S=null, STORE=true, REV=0, BLOCKED=false;
+function stored(){const t=localStorage.getItem(KEY);return t?JSON.parse(t):null}
+try{S=stored()}catch(e){STORE=false;S=null}
+if(!S||S.build!==BUILD||S.reader!==READER||S.mode!==MODE){S={format:"claridi-reader-study-v3",build:BUILD,reader:READER,mode:MODE,stage:"intro",i:0,resp:[],meta:{}}}
+REV=S.rev||0;
+// Stale-tab guard: every save carries a revision number; a tab whose revision is behind the stored one stops saving
+// (prevents an old tab, e.g. left open from an earlier session, from overwriting newer answers made in another tab).
+function save(){if(S.pending&&(S.pending.stage!==S.stage||S.pending.i!==S.i))delete S.pending;if(BLOCKED)return;
+ try{let cur=null;try{cur=stored()}catch(e){}if(cur&&cur.build===BUILD&&(cur.rev||0)!==REV){block();return}
+  S.rev=REV+1;localStorage.setItem(KEY,JSON.stringify(S));REV=S.rev;STORE=true}catch(e){STORE=false}}
+function block(){if(BLOCKED)return;BLOCKED=true;epoch++;READY=false;app.classList.remove("shortcuts-enabled");
+ app.innerHTML='<div class="card"><h2>This form was changed in another tab or window</h2><p>To protect your answers, this tab has stopped. Close this tab and continue in the most recent one, or reload this page to continue from the newest saved progress.</p><button id="reload">Reload page</button></div>';
+ $("reload").onclick=()=>location.reload();["pause","restore","fjson","fshow"].forEach(id=>{const e=$(id);if(e)e.disabled=true})}
+window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)block()});
+const $=id=>document.getElementById(id), app=$("app");
+$("build").textContent="Form "+BUILD+" · "+READER;
+if(MODE==="review")$("mode").innerHTML='<div class="banner"><b>REVIEW / TEST copy for the study coordinator.</b> Not a participant form. Answers given here are <b>not</b> study data and are refused by the analysis script.</div>';
+if(MODE==="pilot")$("mode").innerHTML='<div class="banner"><b>PILOT version.</b> This is a preliminary test of the survey. Answers given here are <b>not</b> used as study data. Please export your answers at the end and send them only if asked.</div>';
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function radios(name,opts){return '<div class="opts" role="radiogroup">'+opts.map((o,i)=>`<label><input type="radio" name="${name}" value="${o[0]}"> <kbd class="shortcut-key" aria-hidden="true">${i+1}</kbd>${o[1]}</label>`).join("")+'</div>'}
+function checks(name,opts){return '<div class="opts">'+opts.map(o=>`<label><input type="checkbox" name="${name}" value="${o[0]}"> ${o[1]}</label>`).join("")+'</div>'}
+function val(n){const e=document.querySelector(`input[name="${n}"]:checked`);return e?e.value:null}
+function vals(n){return [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(e=>e.value)}
+function progress(){const n=S.resp.length;$("pbar").style.width=(100*n/NTOT).toFixed(1)+"%";
+ $("ptxt").textContent=`${n} of ${NTOT} answered`+(STORE?"":" · WARNING: this browser is not saving progress")}
+const LMH=[["low","Low"],["medium","Medium"],["high","High"]];
+let t0=0,hidden=0,hidAt=null,choiceAt=null,READY=false,CHECK=()=>{},epoch=0;
+document.addEventListener("visibilitychange",()=>{if(document.hidden)hidAt=performance.now();else if(hidAt!==null){hidden+=performance.now()-hidAt;hidAt=null}});
+function preload(list){list.forEach(c=>{const im=new Image();im.src=IMG+c+".png"})}
+function whenLoaded(box,cb){const ims=[...box.querySelectorAll("img")];let n=0,bad=false;
+ READY=false;const generation=epoch;const done=()=>{if(generation!==epoch)return;if(++n===ims.length){box.classList.add("ready");t0=performance.now();hidden=0;hidAt=document.hidden?t0:null;choiceAt=null;const d=S.pending;if(d&&d.stage===S.stage&&d.i===S.i){t0-=d.elapsed||0;hidden=d.hidden||0;choiceAt=d.choice==null?null:t0+d.choice;}READY=true;cb(bad);CHECK()}};
+ ims.forEach(im=>{if(im.complete&&im.naturalWidth)done();else{im.onload=done;im.onerror=()=>{bad=true;done()}}})}
+function rec(o){const now=performance.now();if(hidAt!==null){hidden+=now-hidAt;hidAt=now}
+ return Object.assign({reader:READER,mode:MODE,build:BUILD},o,{rt_ms:Math.round(now-t0),hidden_ms:Math.round(hidden),answered_at:new Date().toISOString()})}
+function next(r){delete S.pending;S.resp.push(r);S.i++;save();window.scrollTo(0,0);render()}
+function render(){if(BLOCKED)return;queueMicrotask(setupAnswerShortcuts);epoch++;READY=false;progress();app.onchange=null;app.oninput=null;CHECK=()=>{};
+ if(S.paused){app.innerHTML='<div class="card"><h2>Progress saved</h2><p>You have completed '+S.resp.length+' of '+NTOT+' items. Keep your JSON file and reopen this same assigned form when ready. Use Resume from JSON on another browser or computer.</p><button id="resume">Continue survey</button></div>';$("resume").onclick=()=>{S.paused=false;save();render()};return;}
+ queueMicrotask(restorePending);
+ const st=S.stage;
+ if(st==="intro"){app.innerHTML=`<div class="card"><h1>Tissue image reading study</h1>
+ <p>Thank you for taking part. You will look at fluorescence microscopy image tiles of fixed mouse <b>brain</b> and <b>heart</b> tissue
+ (red and green are two fluorescence channels). Some images are <b>chemically cleared-and-stained reference images</b> (C&amp;SF reference)
+ and some are <b>virtual outputs</b>: images computed by a computer model from an unstained (uncleared, autofluorescence) image of the same field.
+ The proportions are not disclosed.</p>
+ <p><b>Part 1</b> (${B2.length} images): one image per page; answer six questions about it.<br>
+ <b>Part 2</b> (${B1.length} trials): two images of the same field are shown side by side; one is the C&amp;SF reference and the other is a virtual output. Choose the reference.</p>
+ <p>There is no time limit. You can split the study across days. A suggested schedule is Part 1 on day 1, then half of Part 2 on each of days 2 and 3. You may take shorter sessions.
+ You cannot go back to change completed answers, and Part 1 is locked once Part 2 starts. Please work alone, on a desktop or laptop if possible, without image-analysis software, zoom tools or opening image files.</p>
+ <p>Use <b>Save progress and pause</b> before taking a break. Keep the downloaded JSON file. To continue, reopen your assigned form and choose <b>Resume from JSON</b>, including on another computer. The file keeps completed answers and selections on your current page. At the end, download one final JSON file and email it to the study coordinator. Nothing is submitted automatically.</p>
+ <div class="banner"><b>Returning after a break?</b> Do not start again. <button class="sec" id="introresume" type="button">Resume from JSON</button> and select your newest progress file.</div>
+ <div class="q"><b>Your initials (optional)</b><input type="text" id="ini" maxlength="12" autocomplete="off"></div>
+ <div class="q"><b>Consent</b>${radios("consent",[["yes","I agree to take part and that my answers, without my name, are analysed and reported"],["no","I do not agree"]])}</div>
+ <button id="go" disabled>Continue</button></div>`;
+  app.onchange=()=>{$("go").disabled=val("consent")!=="yes"};$("introresume").onclick=()=>$("restore").click();
+  $("go").onclick=()=>{S.meta.initials=$("ini").value.trim();S.meta.consent="yes";S.meta.started=new Date().toISOString();S.stage="elig";save();render()};return}
+ if(st==="elig"){const qs=[["author","Are you an author or co-author of the ClariDi study or of a manuscript about it?"],
+  ["involved","Were you involved in developing the model, generating its outputs, or selecting the images for this survey?"],
+  ["seen","Have you seen the ClariDi manuscript or preprint, its figures, or the ClariDi project web pages?"]];
+  if(MODE!=="pilot")qs.push(["pilot_participant","Have you taken part in the pilot (preliminary) version of this survey?"]);
+  qs.push(["works_alone","Will you complete this survey alone, without discussing the images with anyone and without image-analysis software, zoom tools or opening the image files?"]);
+  app.innerHTML=`<div class="card"><h2>Eligibility</h2><p class="mute small">Please answer truthfully; any answer is accepted and recorded.</p>`+
+  qs.map(q=>`<div class="q"><b>${q[1]}</b>${radios(q[0],[["no","No"],["yes","Yes"]])}</div>`).join("")+`<button id="go" disabled>Continue</button></div>`;
+  app.onchange=()=>{$("go").disabled=!qs.every(q=>val(q[0]))};
+  $("go").onclick=()=>{S.meta.attest={};qs.forEach(q=>S.meta.attest[q[0]]=val(q[0]));S.meta.attest_at=new Date().toISOString();S.stage="exp";save();render()};return}
+ if(st==="exp"){app.innerHTML=`<div class="card"><h2>About you</h2>
+ <div class="q"><b>Areas of expertise (select all that apply)</b>${checks("areas",[["neuroanatomy","Neuroanatomy / neuroscience"],["cardiac","Cardiac histology / cardiology"],["fluorescence","Fluorescence microscopy"],["clearing","Tissue clearing"],["pathology","Histopathology"],["computational","Computational imaging / machine learning"],["other","Other"]])}</div>
+ <div class="q"><b>Current position</b>${radios("position",[["student","Student"],["phd","PhD student"],["postdoc","Postdoc / research scientist"],["faculty","Faculty / PI"],["clinician","Clinician / pathologist"],["technician","Technician / imaging staff"],["other","Other"]])}</div>
+ <div class="q"><b>Years of experience reading microscopy images of tissue</b><input type="number" id="yrs" min="0" max="70" step="1" style="width:110px"></div>
+ <div class="q"><b>How often do you look at fluorescence microscopy images?</b>${radios("freq",[["daily","Daily"],["weekly","Weekly"],["monthly","Monthly"],["rarely","Rarely or never"]])}</div>
+ <div class="q"><b>Familiarity with tissue clearing</b>${radios("clearing",[["none","None"],["some","Some"],["extensive","Extensive"]])}</div>
+ <div class="q"><b>Familiarity with virtual staining or generative image models</b>${radios("virtual",[["none","None"],["some","Some"],["extensive","Extensive"]])}</div>
+ <div class="q"><b>Device you are using now</b>${radios("device",[["desktop","Desktop with external monitor"],["laptop","Laptop"],["tablet","Tablet"],["phone","Phone"]])}</div>
+ <button id="go" disabled>Continue</button></div>`;
+  const ok=()=>vals("areas").length&&val("position")&&$("yrs").value!==""&&val("freq")&&val("clearing")&&val("virtual")&&val("device");
+  app.oninput=app.onchange=()=>{$("go").disabled=!ok()};
+  $("go").onclick=()=>{S.meta.expertise={areas:vals("areas"),position:val("position"),years:+$("yrs").value,fluorescence_frequency:val("freq"),clearing_familiarity:val("clearing"),virtual_staining_familiarity:val("virtual"),device:val("device")};
+   S.meta.display={user_agent:navigator.userAgent,screen_w:screen.width,screen_h:screen.height,window_w:innerWidth,window_h:innerHeight,device_pixel_ratio:devicePixelRatio,
+    color_scheme:(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"};S.stage="inst2";save();render()};return}
+ if(st==="inst2"){app.innerHTML=`<div class="card"><h2>Part 1 of 2: single images</h2>
+ <p>Each page shows one stained-looking image (displayed at 384 x 384 screen pixels). Answer all six questions, then press <b>Next</b>. You cannot go back.
+ Some images are C&amp;SF references and some are virtual outputs; the unstained input is not shown.</p>
+ ${innerWidth<820?'<div class="banner">Your window is narrow ('+innerWidth+' px). The survey works, but a desktop or laptop screen of at least 820 px width is recommended.</div>':""}
+ <button id="go">Start Part 1</button></div>`;$("go").onclick=()=>{S.stage="b2";S.i=0;save();render()};return}
+ if(st==="b2"){if(S.i>=B2.length){S.stage="mid";save();render();return}
+  const x=B2[S.i];if(S.i+1<B2.length)preload([B2[S.i+1].i]);else if(B1.length)preload([B1[0].a,B1[0].b]);
+  app.innerHTML=`<div class="card"><div class="mute small">Part 1 · image ${S.i+1} of ${B2.length} · ID: ${esc(x.t.split("-").pop())}</div>
+  <div class="imgs" id="box"><figure><img src="${IMG}${x.i}.png" alt="image to evaluate" width="384" height="384"></figure></div>
+  <div class="q"><b>Q1 · Nuclei plausibility</b>${radios("nuc",LMH)}</div>
+  <div class="q"><b>Q2 · Membrane / structural plausibility</b>${radios("mem",LMH)}</div>
+  <div class="q"><b>Q3 · Overall tissue architecture coherence</b>${radios("arc",LMH)}</div>
+  <div class="q"><b>Q4 · Tissue type</b>${radios("tis",[["brain","Brain"],["cardiac","Cardiac"],["uncertain","Uncertain"]])}</div>
+  <div class="q"><b>Q5 · Fibrous / vascular pattern detectable</b>${radios("fib",[["yes","Yes"],["no","No"],["uncertain","Uncertain"]])}</div>
+  <div class="q"><b>Q6 · Does this image appear to be a C&amp;SF reference or a virtual output?</b>${radios("src",[["reference","C&amp;SF reference"],["virtual","Virtual output"],["cannot_tell","Cannot tell"]])}</div>
+  <button id="nx" disabled>Next</button></div>`;
+  let bad=false;whenLoaded($("box"),b=>{bad=b});
+  const req=["nuc","mem","arc","tis","fib","src"];CHECK=()=>{$("nx").disabled=!(READY&&req.every(val))};app.onchange=CHECK;
+  $("nx").onclick=()=>{const im=document.querySelector("#box img");next(rec({block:2,trial:x.t,image:x.i,nuclei:val("nuc"),membrane:val("mem"),architecture:val("arc"),
+   tissue_type:val("tis"),fibrous:val("fib"),source_response:val("src"),disp_px:Math.round(im.getBoundingClientRect().width),load_error:bad?1:0}))};return}
+ if(st==="mid"){app.innerHTML=`<div class="card"><h2>Part 1 complete</h2><p>Part 2 starts next. Part 1 answers are now locked.
+ This is the suggested end of the first session. To take a break, use <b>Save progress and pause</b> (bottom of the page) and keep the JSON file.</p><button id="go">Continue to Part 2</button></div>`;
+  $("go").onclick=()=>{S.stage="inst1";save();render()};return}
+ if(st==="inst1"){app.innerHTML=`<div class="card"><h2>Part 2 of 2: which image is the C&amp;SF reference?</h2>
+ <p>Each trial shows two stained-looking images of the <b>same field</b>, labelled A and B. One is the chemically cleared-and-stained (C&amp;SF) reference,
+ the other is a virtual output computed from an unstained image of that field. Choose the one you believe is the <b>C&amp;SF reference</b>, even if you have to guess,
+ and say how confident you are. You will not be told whether you were right. A few trials are easy attention checks.</p>
+ <button id="go">Start Part 2</button></div>`;$("go").onclick=()=>{S.stage="b1";S.i=0;S.meta.part2_started=new Date().toISOString();save();render()};return}
+ if(st==="b1"){if(S.i>=B1.length){S.stage="post";S.meta.part2_finished=new Date().toISOString();save();render();return}
+  const x=B1[S.i];if(S.i+1<B1.length)preload([B1[S.i+1].a,B1[S.i+1].b]);
+  const brk=S.i===Math.ceil(B1.length/2)?`<div class="banner small">Suggested break point: ${S.i} of ${B1.length} pairs done. You may continue, or use <b>Save progress and pause</b> (bottom of the page).</div>`:"";
+  app.innerHTML=`<div class="card">${brk}<div class="mute small">Part 2 · trial ${S.i+1} of ${B1.length} · ID: ${esc(x.t.split("-").pop())}</div>
+  <div class="imgs" id="box"><figure><div class="lab">A</div><img src="${IMG}${x.a}.png" alt="image A" width="384" height="384"></figure>
+  <figure><div class="lab">B</div><img src="${IMG}${x.b}.png" alt="image B" width="384" height="384"></figure></div>
+  <div class="q"><b>Which image is the C&amp;SF reference?</b>${radios("ch",[["A","A"],["B","B"]])}</div>
+  <div class="q"><b>How confident are you?</b>${radios("cf",[["1","1 · guessing"],["2","2"],["3","3"],["4","4 · certain"]])}</div>
+  <button id="nx" disabled>Next</button></div>`;
+  let bad=false;whenLoaded($("box"),b=>{bad=b});
+  CHECK=()=>{$("nx").disabled=!(READY&&val("ch")&&val("cf"))};app.onchange=e=>{if(e.target.name==="ch"&&READY)choiceAt=performance.now();CHECK()};
+  $("nx").onclick=()=>{const im=document.querySelector("#box img");next(rec({block:1,trial:x.t,img_A:x.a,img_B:x.b,choice:val("ch"),confidence:+val("cf"),
+   choice_ms:choiceAt?Math.round(choiceAt-t0):null,disp_px:Math.round(im.getBoundingClientRect().width),load_error:bad?1:0}))};return}
+ if(st==="post"){app.innerHTML=`<div class="card"><h2>Almost done: two optional questions</h2>
+ <div class="q"><b>Which visual features, if any, did you use to decide which image was the reference?</b><textarea id="cues" maxlength="2000"></textarea></div>
+ <div class="q"><b>Did you have any technical problems or other comments?</b><textarea id="cmt" maxlength="2000"></textarea></div>
+ <button id="go">Finish</button></div>`;
+  $("go").onclick=()=>{S.meta.cues=$("cues").value;S.meta.comments=$("cmt").value;S.meta.finished=new Date().toISOString();S.stage="done";save();render()};return}
+ app.innerHTML=`<div class="card"><h2>All done. Thank you!</h2><p>You answered ${S.resp.length} of ${NTOT} items. Please download your answers as one JSON file and
+ ${MODE==="pilot"?"keep them, or send them to the study coordinator if you were asked to test the pilot.":MODE==="review"?"keep them (review copy, not study data).":"send the file to the study coordinator by e-mail."}</p>
+ <p><button id="djson">Download JSON</button></p>
+ <p class="small mute">If the download does not start (for example on some phones), use "Show as text" at the bottom of the page and copy the text into an e-mail.</p>
+ ${MODE!=="main"?'<p><button class="sec" id="restart">Restart this '+MODE+' form (deletes answers in this browser)</button></p>':""}</div>`;
+ $("djson").onclick=()=>download("json");
+ if(MODE!=="main")$("restart").onclick=()=>{if(confirm("Delete all answers of this "+MODE+" form in this browser?")){try{localStorage.removeItem(KEY)}catch(e){}location.reload()}}}
+const COLS=["reader","mode","build","block","trial","image","img_A","img_B","nuclei","membrane","architecture","tissue_type","fibrous","source_response","choice","confidence","rt_ms","choice_ms","hidden_ms","disp_px","load_error","answered_at"];
+function payload(kind){capturePending();const meta=Object.assign({reader:READER,mode:MODE,build:BUILD,form_version:FORM_VERSION,n_items:NTOT,n_answered:S.resp.length,stage:S.stage,exported_at:new Date().toISOString()},S.meta);
+ if(kind==="json")return JSON.stringify({format:"claridi-reader-study-v3",reader:READER,mode:MODE,build:BUILD,meta:meta,responses:S.resp,resume:{version:1,form_version:FORM_VERSION,state:S}},null,1);
+ const q=v=>v==null?"":(/[",\n\r]/.test(String(v))?'"'+String(v).replace(/"/g,'""')+'"':String(v));
+ return ["# meta: "+JSON.stringify(meta),COLS.join(",")].concat(S.resp.map(r=>COLS.map(c=>q(r[c])).join(","))).join("\n")+"\n"}
+function download(kind){if(BLOCKED)return;const txt=payload(kind),fn=`claridi_reader_${READER}_${BUILD}_responses.${kind}`;
+ try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:kind==="csv"?"text/csv":"application/json"}));a.download=fn;document.body.appendChild(a);a.click();a.remove()}
+ catch(e){showText(kind)}}
+function showText(kind){if(BLOCKED)return;const d=$("dump");d.style.display="block";d.value=payload(kind||"json");d.focus();d.select()}
+$("fjson").onclick=()=>download("json");$("fshow").onclick=()=>showText("json");
+function capturePending(){
+ if(S.paused||BLOCKED)return;
+ const controls=[...app.querySelectorAll("input,textarea")].map(e=>({id:e.id,name:e.name,type:e.type,value:e.value,checked:e.checked}));
+ const prev=S.pending, same=prev&&prev.stage===S.stage&&prev.i===S.i;
+ const now=performance.now();
+ S.pending={stage:S.stage,i:S.i,controls,elapsed:READY?Math.max(0,now-t0):(same?prev.elapsed:0),hidden:READY?hidden+(hidAt===null?0:now-hidAt):(same?prev.hidden:0),choice:READY?(choiceAt===null?null:choiceAt-t0):(same?prev.choice:null)};
+ save();
+}
+function restorePending(){
+ if(S.paused)return;
+ const d=S.pending;if(!d||d.stage!==S.stage||d.i!==S.i)return;
+ for(const e of app.querySelectorAll("input,textarea")){
+ const v=d.controls.find(v=>v.id===e.id&&v.name===e.name&&v.type===e.type&&(!["radio","checkbox"].includes(e.type)||v.value===e.value));
+ if(v){if(["radio","checkbox"].includes(e.type))e.checked=!!v.checked;else e.value=v.value;}
+ }
+ app.dispatchEvent(new Event("input"));app.dispatchEvent(new Event("change"));CHECK();setupAnswerShortcuts();
+}
+function validateResume(j){
+ const fail=m=>{throw new Error(m)};
+ if(!j||j.format!=="claridi-reader-study-v3"||j.reader!==READER||j.mode!==MODE||j.build!==BUILD)fail("This file belongs to a different reader or study build. Open your assigned form.");
+ if(j.resume?.version!==1||j.resume.form_version!==FORM_VERSION)fail("This file was not saved by this version of the resumable form.");
+ const q=j.resume.state;
+ if(!q||q.reader!==READER||q.mode!==MODE||q.build!==BUILD||!q.meta||q.meta.constructor!==Object||!Array.isArray(q.resp)||!Number.isInteger(q.i))fail("Invalid progress file.");
+ if(JSON.stringify(q.resp)!==JSON.stringify(j.responses))fail("Inconsistent response data.");
+ const before=["intro","elig","exp","inst2"],between=["mid","inst1"],after=["post","done"];
+ let count;
+ if(before.includes(q.stage)){count=0;if(q.i!==0)fail("Invalid position.");}
+ else if(q.stage==="b2"){if(q.i<0||q.i>B2.length)fail("Invalid position.");count=q.i;}
+ else if(between.includes(q.stage)){count=B2.length;if(q.i!==B2.length)fail("Invalid position.");}
+ else if(q.stage==="b1"){if(q.i<0||q.i>B1.length)fail("Invalid position.");count=B2.length+q.i;}
+ else if(after.includes(q.stage)){count=NTOT;if(q.i!==B1.length)fail("Invalid position.");}
+ else fail("Invalid survey stage.");
+ if(q.resp.length!==count)fail("Answer count does not match progress.");
+ const trials=[...B2,...B1];q.resp.forEach((r,k)=>{
+ const t=trials[k];if(r.trial!==t.t||r.reader!==READER||r.build!==BUILD||r.mode!==MODE||r.block!==(k<B2.length?2:1))fail("Responses do not match this form's item order.");
+ if(k<B2.length?r.image!==t.i:(r.img_A!==t.a||r.img_B!==t.b))fail("Image assignments do not match.");
+ if(!Number.isFinite(r.rt_ms)||r.rt_ms<0||!Number.isFinite(r.hidden_ms)||r.hidden_ms<0)fail("Invalid timing data.");
+ });
+ if(q.pending){const d=q.pending;if(d.stage!==q.stage||d.i!==q.i||!Array.isArray(d.controls)||d.controls.length>100||![d.elapsed,d.hidden].every(x=>Number.isFinite(x)&&x>=0)||(d.choice!==null&&(!Number.isFinite(d.choice)||d.choice<0)))fail("Invalid partial-page data.");}
+ if(q.resp.length<S.resp.length)fail("This backup is older than the progress already in this browser. Use your newest file.");
+ for(let k=0;k<S.resp.length;k++)if(JSON.stringify(S.resp[k])!==JSON.stringify(q.resp[k]))fail("This backup conflicts with answers already saved in this browser.");
+ return q;
+}
+$("pause").onclick=()=>{if(BLOCKED)return;capturePending();S.paused=true;save();if(BLOCKED)return;download("json");render()};
+$("restore").onchange=async e=>{
+ const f=e.target.files[0];if(!f)return;
+ try{if(f.size>10000000)throw new Error("Please select a study JSON file smaller than 10 MB.");
+ let j;try{j=JSON.parse(await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result));r.onerror=()=>no(r.error);r.readAsText(f)}))}catch(_){throw new Error("This is not a valid study JSON file (it may be damaged or incomplete).")}
+ try{const cur=stored();if(cur&&cur.build===BUILD&&(cur.rev||0)!==REV){block();return}}catch(_){}
+ const q=validateResume(j);
+ if(!confirm("Load this backup with "+q.resp.length+" completed items?"))return;
+ S=q;S.rev=REV;S.paused=true;S.meta.resume_events=S.meta.resume_events||[];S.meta.resume_events.push({at:new Date().toISOString(),completed:S.resp.length,window_w:innerWidth,window_h:innerHeight,user_agent:navigator.userAgent});
+ save();render();$("restoremsg").textContent="Progress loaded. Choose Continue survey when ready.";
+ }catch(err){$("restoremsg").textContent="Could not load progress: "+err.message;}finally{e.target.value="";}
+};
+app.addEventListener("input",capturePending);app.addEventListener("change",capturePending);
+window.addEventListener("pagehide",capturePending);
+
+// Answer shortcuts apply only to image-rating pages, never consent or text entry.
+let hotGroup=null;
+function answerGroups(){return [...app.querySelectorAll('.q')].filter(q=>q.querySelector('input[type="radio"]'));}
+function highlightAnswer(q){hotGroup=q;for(const group of answerGroups()){group.classList.toggle('hot-active',group===q);} }
+function setupAnswerShortcuts(){
+ document.getElementById('hotkey-help')?.remove();
+ hotGroup=null;app.classList.toggle('shortcuts-enabled',['b1','b2'].includes(S.stage)&&!S.paused);
+ if(!app.classList.contains('shortcuts-enabled'))return;
+ const help=document.createElement('p');help.className='small mute';help.id='hotkey-help';help.textContent='Keyboard: use number keys for the highlighted question. The highlight moves to the next unanswered question. Click or Tab to revisit a question on this page. Press Enter when all answers are selected to go to the next item.';
+ app.querySelector('.card').prepend(help);
+ highlightAnswer(answerGroups().find(q=>!q.querySelector('input:checked'))||answerGroups()[0]);
+}
+app.addEventListener('focusin',e=>{const q=e.target.closest('.q');if(q&&answerGroups().includes(q))highlightAnswer(q);});
+app.addEventListener('pointerdown',e=>{const q=e.target.closest('.q');if(q&&answerGroups().includes(q))highlightAnswer(q);});
+app.addEventListener('change',e=>{
+ if(!app.classList.contains('shortcuts-enabled')||e.target.type!=='radio')return;
+ const groups=answerGroups(),q=e.target.closest('.q'),i=groups.indexOf(q);
+ const next=groups.slice(i+1).concat(groups.slice(0,i)).find(g=>!g.querySelector('input:checked'));
+ highlightAnswer(next||q);
+});
+document.addEventListener('keydown',e=>{
+ if(e.repeat||e.isComposing||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey||!app.classList.contains('shortcuts-enabled'))return;
+ const target=e.target;
+ if(target.isContentEditable||target.closest('[contenteditable="true"]')||target.matches('textarea,select,input:not([type="radio"]):not([type="checkbox"])'))return;
+ if(target!==document.body&&target!==document.documentElement&&!app.contains(target))return;
+ if(e.key==='Enter'){
+  if(target.closest('button,a'))return;
+  e.preventDefault();const next=$('nx');if(READY&&next&&!next.disabled)next.click();return;
+ }
+ if(!/^[1-9]$/.test(e.key)||!READY||!hotGroup)return;
+ const option=hotGroup.querySelectorAll('input[type="radio"]')[Number(e.key)-1];if(!option||option.disabled)return;
+ e.preventDefault();option.checked=true;option.dispatchEvent(new Event('change',{bubbles:true}));
+});
+
+render();
+</script></body></html>
